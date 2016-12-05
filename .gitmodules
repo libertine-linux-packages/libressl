@@ -1,0 +1,6 @@
+[submodule "portable"]
+	path = portable
+	url = https://github.com/libressl-portable/portable.git
+[submodule "openbsd"]
+	path = openbsd
+	url = https://github.com/libressl-portable/openbsd.git
