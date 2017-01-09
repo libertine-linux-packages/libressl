@@ -99,10 +99,7 @@ _libertine_compile_libressl_internal()
 		# We need to 'fake' git to bypass the logic in update.sh (they use a git clone, not a git submodule)
 		ln -s ../openbsd openbsd
 		libertine_public_addOrReplaceBinaryInPathWithSwallow git
-		mkdir -m 0755 -p PATH
-		ln -s "$(_libertine_compile_pathsPATH)"/true PATH/git
-		PATH="$(libertine_public_sourcePath)":"$PATH" ./autogen.sh
-		rm -rf PATH
+		./autogen.sh
 		
 		local autoconfFunction
 		if $strip; then
