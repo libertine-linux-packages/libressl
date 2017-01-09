@@ -25,6 +25,8 @@ build_needs automake aclocal
 depends build_gnum4
 build_needs m4
 
+depends build_gnuconfig
+
 depends build_busybox
 # For _libertine_compile_libressl_internal
 build_needs ln mkdir rm cp
@@ -84,28 +86,36 @@ case "$package" in
 	
 esac
 
+build_needs sed
 _libertine_compile_libressl_internal()
 {
 	local strip="$1"
 	local destinationFolderPath="$2"
 	
 	pushd "$(libertine_public_sourcePath)"
-
+		
+		# Replace config.guess / config.sub
+		libertine_public_autoconf_replaceWithKnownVersionOfConfigSub scripts
+		libertine_public_autoconf_replaceWithKnownVersionOfConfigGuess scripts
+		
 		# We fake pod2man
 		libertine_public_addOrReplaceBinaryInPathWithSwallow pod2man
+		
+		# We make sure /opt/freeware/bin/patch isn't used
+		sed -i -e 's;/opt/freeware/bin/patch;path;g' update.sh
 		
 		libtoolize --install --force --verbose
 		
 		# We need to 'fake' git to bypass the logic in update.sh (they use a git clone, not a git submodule)
 		ln -s ../openbsd openbsd
 		libertine_public_addOrReplaceBinaryInPathWithSwallow git
-		./autogen.sh
+		sh autogen.sh
 		
 		local autoconfFunction
 		if $strip; then
 			libertine_public_autoconf_modernAutoconfConfigure --enable-nc --with-openssldir='/etc/openssl'
 		else
-			libertine_public_autoconf_modernAutoconfConfigureForBuild --enable-nc --with-openssldir="$destinationFolderPath"/etc/openssl
+			libertine_public_autoconf_modernAutoconfConfigureForBuild --with-openssldir="$destinationFolderPath"/etc/openssl
 		fi
 		
 		libertine_public_make
