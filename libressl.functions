@@ -10,22 +10,11 @@ build_needs ccache
 depends build_gnumake
 build_needs make
 
-depends build_slibtool
-build_needs clibtool-static libtoolize realpath
-
 depends build_perl
 build_needs perl
 
-depends build_autoconf
-build_needs autoconf autoheader autom4te autoreconf autoscan autoupdate ifnames
-
-depends build_automake
-build_needs automake aclocal
-
-depends build_gnum4
-build_needs m4
-
-depends build_gnuconfig
+depends build_cmake
+build_needs cmake
 
 depends build_busybox
 # For _libertine_compile_libressl_internal
@@ -57,8 +46,7 @@ case "$package" in
 		libertine_compile_libressl()
 		{
 			_libertine_compile_libressl_internal true "$(libertine_public_outputHostSysrootPath)"
-
-			# We do not install nc at this time, although we might going forwards
+			
 			libertine_public_installAndStripBinariesIn bin openssl
 			
 			mkdir -m 0755 -p "$(libertine_public_outputInitramfsPath)"/etc
@@ -94,37 +82,40 @@ _libertine_compile_libressl_internal()
 	
 	pushd "$(libertine_public_sourcePath)"
 		
-		# Replace config.guess / config.sub
-		libertine_public_autoconf_replaceWithKnownVersionOfConfigSub scripts
-		libertine_public_autoconf_replaceWithKnownVersionOfConfigGuess scripts
-		
 		# We fake pod2man
 		libertine_public_addOrReplaceBinaryInPathWithSwallow pod2man
 		
-		# We make sure /opt/freeware/bin/patch isn't used
-		sed -i -e 's;/opt/freeware/bin/patch;path;g' update.sh
-		
-		libtoolize --install --force --verbose
-		
+		# We make sure /opt/freeware/bin/patch isn't used - it's unlikely to be present, but we want a clean environment
+		sed -i -e 's;/opt/freeware/bin/patch;patch;g' update.sh
+				
 		# We need to 'fake' git to bypass the logic in update.sh (they use a git clone, not a git submodule)
 		ln -s ../openbsd openbsd
 		libertine_public_addOrReplaceBinaryInPathWithSwallow git
-		sh autogen.sh
 		
-		local autoconfFunction
+		{
+			printf '%s\n' "Running update.sh"
+			sh update.sh
+			printf '\n\n'
+		} 1>&2
+		
+		local etcFolderPath
 		if $strip; then
-			libertine_public_autoconf_modernAutoconfConfigure --enable-nc --with-openssldir='/etc/openssl'
+			etcFolderPath='/etc/ssl'
 		else
-			libertine_public_autoconf_modernAutoconfConfigureForBuild --with-openssldir="$destinationFolderPath"/etc/openssl
+			etcFolderPath="$destinationFolderPath"/etc/ssl
 		fi
 		
-		libertine_public_make
-
-		if $strip; then
-			libertine_public_make DESTDIR="$destinationFolderPath" install
-		else
-			libertine_public_make install
-		fi
+		libertine_public_cmake -DENABLE_ASM:BOOL=ON -DENABLE_NC:BOOL=ON -DOPENSSLDIR="$etcFolderPath"
+		
+		pushd .libertine-cmake-build
+			libertine_public_make VERBOSE=1
+		
+			if $strip; then
+				libertine_public_make DESTDIR="$destinationFolderPath" install
+			else
+				libertine_public_make install
+			fi
+		popd
 		
 	popd
 }
