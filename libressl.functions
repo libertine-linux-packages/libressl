@@ -74,7 +74,7 @@ case "$package" in
 	
 esac
 
-build_needs sed
+build_needs sed rm
 _libertine_compile_libressl_internal()
 {
 	local strip="$1"
@@ -104,6 +104,12 @@ _libertine_compile_libressl_internal()
 		else
 			etcFolderPath="$destinationFolderPath"/etc/ssl
 		fi
+		
+		# Remove -fPIC nastiness and shared code
+		sed -i \
+			-e 's/set(CMAKE_POSITION_INDEPENDENT_CODE true)/set(CMAKE_POSITION_INDEPENDENT_CODE false)/g' \
+			-e 's/set(BUILD_SHARED true)/set(BUILD_SHARED false)/g' \
+			CMakeLists.txt
 		
 		libertine_public_cmake -DENABLE_ASM:BOOL=ON -DENABLE_NC:BOOL=ON -DOPENSSLDIR="$etcFolderPath"
 		
