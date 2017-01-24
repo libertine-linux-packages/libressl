@@ -49,8 +49,7 @@ case "$package" in
 			
 			libertine_public_installAndStripBinariesIn bin openssl
 			
-			mkdir -m 0755 -p "$(libertine_public_outputInitramfsPath)"/etc
-			libertine_public_copy "$(libertine_public_outputHostSysrootPath)"/etc/ "$(libertine_public_outputInitramfsPath)"/etc/
+			mv "$(libertine_public_outputHostSysrootPath)"/etc "$(libertine_public_outputInitramfsPath)"/
 		}
 	;;
 	
