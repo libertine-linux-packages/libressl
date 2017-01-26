@@ -66,7 +66,7 @@ case "$package" in
 			mkdir -m 0755 -p "$destinationFolderPath"
 			
 			cp "$(libertine_public_outputHostSysrootPath libressl)"/usr/bin/nc "$destinationFolderPath"
-			${libertine_host}-strip "$destinationFolderPath"/nc
+			libertine_public_stripAndSecureBinary "$destinationFolderPath"/nc
 		}
 		
 	;;
