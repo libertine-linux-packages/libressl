@@ -42,12 +42,15 @@ case "$package" in
 	
 		depends build_musl_cross_make_host
 		build_needs "$libertine_host"-cc "$libertine_host"-gcc "$libertine_host"-ar "$libertine_host"-ld "$libertine_host"-ranlib "$libertine_host"-strip
+
+		depends build_paxctl
+		build_needs paxctl
 		
 		libertine_compile_libressl()
 		{
 			_libertine_compile_libressl_internal true "$(libertine_public_outputHostSysrootPath)"
 			
-			libertine_public_installAndStripBinariesIn bin openssl
+			libertine_public_installAndStripBinaryIn bin openssl
 			
 			mv "$(libertine_public_outputHostSysrootPath)"/etc "$(libertine_public_outputInitramfsPath)"/
 		}
@@ -59,6 +62,9 @@ case "$package" in
 	
 		depends build_musl_cross_make_host
 		build_needs "$libertine_host"-strip
+
+		depends build_paxctl
+		build_needs paxctl
 		
 		libertine_compile_libressl_nc()
 		{
