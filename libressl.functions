@@ -79,7 +79,7 @@ case "$package" in
 	
 esac
 
-build_needs sed rm
+build_needs sed rm mkdir cp
 _libertine_compile_libressl_internal()
 {
 	local strip="$1"
@@ -127,6 +127,14 @@ _libertine_compile_libressl_internal()
 				libertine_public_make install
 			fi
 		popd
+	
+		# Install cert.pem
+		local installCertificatesFolderPath="$destinationFolderPath"/etc/ssl
+		mkdir -m 0755 -p "$installCertificatesFolderPath"
+		cp openbsd/src/lib/libcrypto/cert.pem "$installCertificatesFolderPath"
 		
+		# Create folder for certs
+		mkdir -m 0755 -p "$installCertificatesFolderPath"/certs
 	popd
+	
 }
