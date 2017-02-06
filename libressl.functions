@@ -56,6 +56,27 @@ case "$package" in
 		}
 	;;
 	
+	libressl_ocspcheck)
+		
+		depends libressl
+	
+		depends build_musl_cross_make_host
+		build_needs "$libertine_host"-strip
+
+		depends build_paxctl
+		build_needs paxctl
+		
+		libertine_compile_libressl_ocspcheck()
+		{
+			local destinationFolderPath="$(libertine_public_outputInitramfsPath)"/usr/bin
+			mkdir -m 0755 -p "$destinationFolderPath"
+			
+			cp "$(libertine_public_outputHostSysrootPath libressl)"/usr/bin/ocspcheck "$destinationFolderPath"
+			libertine_public_stripAndSecureBinary "$destinationFolderPath"/ocspcheck
+		}
+		
+	;;
+	
 	libressl_nc)
 		
 		depends libressl
@@ -79,11 +100,37 @@ case "$package" in
 	
 esac
 
-build_needs sed rm mkdir cp
+build_needs mv sed cmp
+_libertine_compile_libressl_internal_patchWithSecureTlsCiphers()
+{
+	if core_variable_isUnset 'libertine_libressl_tlsLibresslCiphers'; then
+		core_exitError 1 "Please specify 'libertine_libressl_tlsLibresslCiphers' in '${libertine_machine}/package-configurations/${package}.config'"
+	fi
+
+	# Look for  #define SSL_DEFAULT_CIPHER_LIST	"ALL:!aNULL:!eNULL:!SSLv2"
+
+	local fileToPatch="$(libertine_public_packagePath)"/openbsd/src/lib/libssl/ssl.h
+	mv "$fileToPatch" "$fileToPatch".orig
+	sed \
+		-e 's;"ALL:!aNULL:!eNULL:!SSLv2";"'"$libertine_libressl_tlsLibresslCiphers"'";g' \
+		"$fileToPatch".orig \
+		>"$fileToPatch"
+
+	if cmp -s "$fileToPatch" "$fileToPatch".orig; then
+		core_exitError 2 "Major failure, failed to patch libressl with libressl secure TLS ciphers; look in packages/libressl/libressl.functions _libertine_compile_libressl_internal_patchWithSecureTlsCiphers()"
+	fi
+}
+
+build_needs rm mkdir cp
 _libertine_compile_libressl_internal()
 {
 	local strip="$1"
 	local destinationFolderPath="$2"
+	
+	_libertine_compile_libressl_internal_patchWithSecureTlsCiphers
+	
+
+	
 	
 	pushd "$(libertine_public_sourcePath)"
 		
@@ -127,14 +174,50 @@ _libertine_compile_libressl_internal()
 				libertine_public_make install
 			fi
 		popd
-	
+		
+		
 		# Install cert.pem
 		local installCertificatesFolderPath="$destinationFolderPath"/etc/ssl
 		mkdir -m 0755 -p "$installCertificatesFolderPath"
 		cp openbsd/src/lib/libcrypto/cert.pem "$installCertificatesFolderPath"
 		
+		
 		# Create folder for certs
 		mkdir -m 0755 -p "$installCertificatesFolderPath"/certs
+		
+		
+	
+	
+		# Install pkg-config cruft; CMake doesn't
+		local destinationSysrootForPackageConfigFolderPath
+		if $strip; then
+			destinationSysrootForPackageConfigFolderPath="$(libertine_public_outputHostSysrootPath)"
+		else
+			destinationSysrootForPackageConfigFolderPath="$(libertine_public_outputBuildSysrootPath)"
+		fi
+	
+		local pkgConfigFolderPath="$destinationSysrootForPackageConfigFolderPath"/usr/lib/pkgconfig
+		mkdir -m 0700 -p "$pkgConfigFolderPath"
+	
+		local version="$(cat VERSION)"
+		local libs=''
+		local platformLdAdd=''
+		
+		local pcFile
+		for pcFile in libcrypto libssl libtls openssl
+		do
+			sed \
+				-e 's;@prefix@;'"$destinationSysrootForPackageConfigFolderPath"'/usr;g' \
+				-e 's;@exec_prefix@;'"$destinationSysrootForPackageConfigFolderPath"'/usr/bin;g' \
+				-e 's;@libdir@;'"$destinationSysrootForPackageConfigFolderPath"'/usr/lib;g' \
+				-e 's;@includedir@;'"$destinationSysrootForPackageConfigFolderPath"'/usr/include;g' \
+				-e 's;@VERSION@;'"$version"';g' \
+				-e 's;@LIBS@;'"$libs"';g' \
+				-e 's;@PLATFORM_LDADD@;'"$platformLdAdd"';g' \
+				"$pcFile".pc.in \
+				>"$pkgConfigFolderPath"/"$pcFile".pc
+		done
+		
 	popd
 	
 }
