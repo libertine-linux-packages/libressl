@@ -163,7 +163,7 @@ _libertine_compile_libressl_internal()
 			-e 's/set(BUILD_SHARED true)/set(BUILD_SHARED false)/g' \
 			CMakeLists.txt
 		
-		libertine_public_cmake -DENABLE_ASM:BOOL=ON -DENABLE_NC:BOOL=ON -DOPENSSLDIR="$etcFolderPath"
+		libertine_public_cmake_static -DENABLE_ASM:BOOL=ON -DENABLE_NC:BOOL=ON -DOPENSSLDIR="$etcFolderPath"
 		
 		pushd .libertine-cmake-build
 			libertine_public_make VERBOSE=1
