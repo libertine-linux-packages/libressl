@@ -17,6 +17,7 @@ depends build_cmake
 build_needs cmake
 
 depends build_busybox
+depends build_netbsd_src_sleep
 # For _libertine_compile_libressl_internal
 build_needs ln mkdir rm cp
 # For build proper
