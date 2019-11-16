@@ -1,6 +1,10 @@
 [submodule "portable"]
 	path = portable
 	url = https://github.com/libertine-linux-forks/libressl-portable-portable.git
+	branch = master
+	libertine-linux-upstream = https://github.com/libertine-linux-forks/libressl-portable-portable.git
 [submodule "openbsd"]
 	path = openbsd
 	url = https://github.com/libertine-linux-forks/libressl-portable-openbsd.git
+	branch = master
+	libertine-linux-upstream = https://github.com/libertine-linux-forks/libressl-portable-openbsd.git
