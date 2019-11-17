@@ -6,3 +6,7 @@
 	path = openbsd
 	url = https://github.com/libertine-linux-forks/libressl-portable-openbsd.git
 	branch = master
+	update = checkout
+	ignore = none
+	fetchRecurseSubmodules = true
+	shallow = true
